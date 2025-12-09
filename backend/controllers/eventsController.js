@@ -10,7 +10,7 @@ const ensureDB = async () => {
 const listEvents = async (req, res) => {
     try {
         await ensureDB();
-        const calendar = getCalendarService();
+        const calendar = getCalendarService(req.user);
         const calendarId = process.env.CALENDAR_ID || 'primary';
 
         // Fetch events from Google Calendar
@@ -35,7 +35,10 @@ const listEvents = async (req, res) => {
         const allIds = [...new Set([...googleEventIds, ...recurringIds])];
 
         // Fetch metadata from MongoDB
-        const metadataList = await EventMetadata.find({ googleEventId: { $in: allIds } })
+        const metadataList = await EventMetadata.find({
+            googleEventId: { $in: allIds },
+            userId: req.user._id
+        })
             .populate('category');
         const metadataMap = new Map(metadataList.map(m => [m.googleEventId, m]));
 
@@ -61,7 +64,7 @@ const listEvents = async (req, res) => {
 const createEvent = async (req, res) => {
     try {
         await ensureDB();
-        const calendar = getCalendarService();
+        const calendar = getCalendarService(req.user);
         const calendarId = process.env.CALENDAR_ID || 'primary';
         const { summary, description, start, end, location, tags, notes, categoryId } = req.body;
 
@@ -90,7 +93,8 @@ const createEvent = async (req, res) => {
                 googleEventId: newEvent.id,
                 tags,
                 notes,
-                category: validCategoryId
+                category: validCategoryId,
+                userId: req.user._id
             });
 
             // Re-fetch to populate if needed, or just attach
@@ -107,7 +111,7 @@ const createEvent = async (req, res) => {
 const updateEvent = async (req, res) => {
     try {
         await ensureDB();
-        const calendar = getCalendarService();
+        const calendar = getCalendarService(req.user);
         const calendarId = process.env.CALENDAR_ID || 'primary';
         const eventId = req.params.id;
         const { summary, description, start, end, location, tags, notes, categoryId } = req.body;
@@ -157,8 +161,8 @@ const updateEvent = async (req, res) => {
 
         // Upsert
         const metadata = await EventMetadata.findOneAndUpdate(
-            { googleEventId: targetId },
-            updateOps,
+            { googleEventId: targetId, userId: req.user._id }, // Ensure we match user
+            { ...updateOps, $setOnInsert: { userId: req.user._id } }, // Set userId on insert
             { new: true, upsert: true }
         ).populate('category');
 
@@ -174,7 +178,7 @@ const updateEvent = async (req, res) => {
 const deleteEvent = async (req, res) => {
     try {
         await ensureDB();
-        const calendar = getCalendarService();
+        const calendar = getCalendarService(req.user);
         const calendarId = process.env.CALENDAR_ID || 'primary';
         const eventId = req.params.id;
 
@@ -183,7 +187,7 @@ const deleteEvent = async (req, res) => {
             eventId,
         });
 
-        await EventMetadata.findOneAndDelete({ googleEventId: eventId });
+        await EventMetadata.findOneAndDelete({ googleEventId: eventId, userId: req.user._id });
 
         res.json({ message: 'Event deleted successfully' });
     } catch (error) {
@@ -195,7 +199,7 @@ const deleteEvent = async (req, res) => {
 const rsvpEvent = async (req, res) => {
     try {
         await ensureDB();
-        const calendar = getCalendarService();
+        const calendar = getCalendarService(req.user);
         const calendarId = process.env.CALENDAR_ID || 'primary';
         const eventId = req.params.id;
         const { responseStatus } = req.body; // 'accepted', 'declined', 'tentative'

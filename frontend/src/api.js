@@ -2,14 +2,19 @@ import axios from 'axios';
 
 const api = axios.create({
     baseURL: '/api',
+    withCredentials: true // Important for cookies
 });
 
-api.interceptors.request.use((config) => {
-    const password = localStorage.getItem('app_password');
-    if (password) {
-        config.headers['x-app-password'] = password;
+// Handle 401s
+api.interceptors.response.use(
+    response => response,
+    error => {
+        if (error.response && error.response.status === 401) {
+            // Redirect to login or handled in App.vue check
+            console.error('Unauthorized');
+        }
+        return Promise.reject(error);
     }
-    return config;
-});
+);
 
 export default api;

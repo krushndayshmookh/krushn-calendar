@@ -10,6 +10,11 @@ const CategorySchema = new mongoose.Schema({
         required: true,
         default: '#3b82f6' // Default blue
     },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: false // Optional for now to support legacy data until migration
+    },
     isDefault: {
         type: Boolean,
         default: false

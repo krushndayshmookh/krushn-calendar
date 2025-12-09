@@ -13,6 +13,10 @@ const EventMetadataSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Category'
     },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
     customStatus: String,
 }, { timestamps: true });
 
