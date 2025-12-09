@@ -1,14 +1,18 @@
 const { google } = require('googleapis');
 
-const getCalendarService = () => {
+const getCalendarService = (user) => {
     try {
+        if (!user || !user.refreshToken) {
+            throw new Error('User not authenticated with Google');
+        }
+
         const oauth2Client = new google.auth.OAuth2(
             process.env.GOOGLE_CLIENT_ID,
             process.env.GOOGLE_CLIENT_SECRET
         );
 
         oauth2Client.setCredentials({
-            refresh_token: process.env.GOOGLE_REFRESH_TOKEN
+            refresh_token: user.refreshToken
         });
 
         const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
