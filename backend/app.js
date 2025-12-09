@@ -14,6 +14,9 @@ const app = express();
 // Connect to DB immediately (Serverless optimization check needed, but fine for now)
 connectDB();
 
+// Trust Proxy (Required for Vercel/Heroku to see https)
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' ? undefined : 'http://localhost:5173',
