@@ -7,7 +7,7 @@ import CategoryManager from '@/components/CategoryManager.vue'
 import WeekView from '@/views/WeekView.vue'
 import Button from '@/components/ui/Button.vue'
 
-const viewMode = ref('month') // 'month' | 'week'
+const viewMode = ref(localStorage.getItem('calendar_view_mode') || 'month') // 'month' | 'week'
 const currentDate = ref(new Date())
 const events = ref([])
 const categories = ref([])
@@ -61,6 +61,10 @@ const loadCategories = async () => {
 }
 
 // Persistence Watchers
+watch(viewMode, (newVal) => {
+    localStorage.setItem('calendar_view_mode', newVal)
+})
+
 watch(activeCategories, (newVal) => {
     localStorage.setItem('calendar_active_categories', JSON.stringify(newVal))
 }, { deep: true })
